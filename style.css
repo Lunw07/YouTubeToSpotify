@@ -1,0 +1,113 @@
+:root {
+    --bg: #ffffff;
+    --surface: #f4f4f4;
+    --primary: #1ED760;
+    --text: #111111;
+    --headertext: #ffffff;
+    --muted: #666666;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+
+}
+
+/* Layout */
+
+.header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--primary);
+    padding: 10px 50px;
+    margin-bottom: 100px;
+    font-size: 20px;
+    font-weight: 550;
+
+}
+
+.converter{
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    align-items: center;     
+    gap: 30px;
+}
+
+.cards{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    margin: 100px;
+}
+
+.card{
+    border-radius: 10px;
+    border: 3px solid var(--primary);
+    background-color: var(--bg);
+    padding: 30px;
+    width: 400px;
+    min-height: 400px;
+}
+
+.hero{
+    text-align: center
+}
+
+/* Components */
+
+.btn{
+    --hover: #1DB954;
+
+    background-color: var(--primary);
+    color: var(--headertext);
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    font-weight: 550;
+    padding: 20px;
+
+    cursor: pointer;
+
+}
+
+.btn:hover {
+    opacity: 0.9;
+    background-color: var(--hover);
+}
+
+.header a {
+    color: white;
+    text-decoration: none;
+}
+
+/* Form */
+
+.url{
+    display: flex;
+    align-items: center;
+}
+
+.url input,
+.url button {
+    height: 70px;
+    font-size: 16px;
+
+}
+
+.url input {
+    flex: 1;
+    padding: 0 10px;
+    border: 3px solid var(--primary);
+    width: 400px;
+    font-size: 22px;
+}
+
+.url button {
+    padding: 0 16px;
+    border-radius: 0px;
+    width: 150px;
+    font-size: 25px;
+
+}
