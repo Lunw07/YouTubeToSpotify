@@ -10,6 +10,7 @@ const filter = ["(Official Video)", "[Official Video]", "(Official Music Video)"
 
 let titles = [];
 
+// helper functions stuff
 
 function isValidURL(url) {
     try {
@@ -94,6 +95,11 @@ async function getYoutubePlaylist(id){
     const res = await fetch(playlistItemsUrl);
     const data = await res.json();
 
+    if (!data.items) {
+        console.log("Playlist not found");
+        return [];
+    }
+
     return data.items;
 }
 
@@ -103,39 +109,14 @@ async function getPlaylistName(id){
     const res = await fetch(playlistUrl);
     const data = await res.json();
 
+    if (!data.items || data.items.length === 0) {
+        console.log("Playlist name not found");
+        return "Youtube Playlist";
+    }
+
     return data.items[0].snippet.title;
 }
 
-
-urlForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const ytUrl = input.value;
-
-    const id = validateYoutubePlaylist(ytUrl);        // validate the URL
- 
-    const items = await getYoutubePlaylist(id);   
-    const name = await getPlaylistName(id);            
-
-    items.forEach(element => {                               // clean up YT titles 
-        let raw = element.snippet.title;
-        
-        const cleaned = cleanTitle(raw, filter);
-
-        const finalTitle = storeTitle(cleaned);
-
-        titles.push(finalTitle);
-    });
-
-    //console.log(titles);
-
-    const spotifyUris = await findSongsOnSpotify(titles);           // find songs on spotify
-
-    const spotify_playlist_id = await createPlaylist(name);             // create playlist on spotify
-
-    addToPlaylist(spotify_playlist_id, spotifyUris);                // add songs to playlist
-
-});
 
 // Spotify Oauth to get Token ----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -316,8 +297,42 @@ async function addToPlaylist(playlist_id, spotifyUris){
     //console.log(data);
 }
 
+// Actual Program
 
+urlForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
+    const ytUrl = input.value;
+
+    const id = validateYoutubePlaylist(ytUrl);        // validate the URL
+
+    if (!id) {
+        console.log("Invalid YouTube playlist");
+        return;
+    }
+ 
+    const items = await getYoutubePlaylist(id);   
+    const name = await getPlaylistName(id);            
+
+    items.forEach(element => {                               // clean up YT titles 
+        let raw = element.snippet.title;
+        
+        const cleaned = cleanTitle(raw, filter);
+
+        const finalTitle = storeTitle(cleaned);
+
+        titles.push(finalTitle);
+    });
+
+    //console.log(titles);
+
+    const spotifyUris = await findSongsOnSpotify(titles);           // find songs on spotify
+
+    const spotify_playlist_id = await createPlaylist(name);             // create playlist on spotify
+
+    addToPlaylist(spotify_playlist_id, spotifyUris);                // add songs to playlist
+
+});
 
 
 
