@@ -8,8 +8,6 @@ const testURL = "https://www.youtube.com/watch?v=DX7HyN7oJjE&list=PL0IIWRV1LEYJ4
 
 const filter = ["(Official Video)", "[Official Video]", "(Official Music Video)", "(Lyrics)", "[Lyrics]", "(Audio)", "[HD]", "4K", "(Visualizer)", "(Live)", "(Remastered)", "(Official Visualizer)"]; 
 
-let titles = [];
-
 // helper functions stuff
 
 function isValidURL(url) {
@@ -171,7 +169,6 @@ document.getElementById("login").addEventListener("click", async () => {
     window.location.href = authUrl.toString();
 });
 
-
 window.addEventListener("load", () => {
     if (window.location.search.length > 0) {
         handleRedirect();
@@ -244,7 +241,6 @@ async function findSongsOnSpotify(songs){
     return uris;
 }
 
-
 // Create the playlist + Add songs --------------------------------------------------------------------------------------------------
 
 async function createPlaylist(name){
@@ -311,16 +307,16 @@ urlForm.addEventListener("submit", async (e) => {
         return;
     }
  
-    const items = await getYoutubePlaylist(id);   
-    const name = await getPlaylistName(id);            
+    const items = await getYoutubePlaylist(id);             
+    const name = await getPlaylistName(id);        
+    
+    let titles = [];
 
     items.forEach(element => {                               // clean up YT titles 
         let raw = element.snippet.title;
         
         const cleaned = cleanTitle(raw, filter);
-
         const finalTitle = storeTitle(cleaned);
-
         titles.push(finalTitle);
     });
 
