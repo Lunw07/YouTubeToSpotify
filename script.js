@@ -6,6 +6,11 @@ const API_KEY = "AIzaSyC_-T944hlJbyF5t_nwrWW5LCcTkbfkCGs";
 const testURL = "https://www.youtube.com/watch?v=DX7HyN7oJjE&list=PL0IIWRV1LEYJ4cz8r4ItYvC6ijwYk0Ijz&pp=sAgC"
 //PL0IIWRV1LEYJ4cz8r4ItYvC6ijwYk0Ijz
 
+const filter = ["(Official Video)", "[Official Video]", "(Official Music Video)", "(Lyrics)", "[Lyrics]", "(Audio)", "[HD]", "4K", "(Visualizer)", "(Live)", "(Remastered)", "(Official Visualizer)"]; 
+
+let titles = [];
+
+
 function isValidURL(url) {
     try {
         new URL(url);
@@ -47,12 +52,7 @@ function validatePlaylistID(id){
     }
 }
 
-// Youtube API------------------------------------------------------------------------------------------------------------------------------------------
-
-urlForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const ytUrl = input.value;
+function validateYoutubePlaylist(ytUrl){
 
     if (isValidURL(ytUrl) == false || isYoutubeURL(ytUrl) == false){
         console.log("Invalid URL");
@@ -66,40 +66,74 @@ urlForm.addEventListener("submit", async (e) => {
         return;
     }
 
-    console.log("Playlist ID:", id);
+    return id;
+}
 
-    const apiUrl = `https://youtube.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${id}&maxResults=50&key=${API_KEY}`;
-    const res = await fetch(apiUrl);
+function cleanTitle(raw, filter){
+    for (let i = 0; i < filter.length; i++){
+        raw = raw.replaceAll(filter[i], "");
+    }
+
+    const title = raw.trim();
+    return title;
+}
+
+function storeTitle(title){
+    let [artist, song] = title.split("-");
+    return {"artist": artist?.trim() || "",        // if it doesnt find an artist, use "" instead
+        "song": song?.trim() || title
+    };
+
+}
+
+// Youtube API------------------------------------------------------------------------------------------------------------------------------------------
+
+async function getYoutubePlaylist(id){
+
+    const playlistItemsUrl = `https://youtube.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${id}&maxResults=50&key=${API_KEY}`;
+    const res = await fetch(playlistItemsUrl);
     const data = await res.json();
 
-    const items = data.items;
+    return data.items;
+}
 
-    let titles = [];
-    const filter = ["(Official Video)", "[Official Video]", "(Official Music Video)", "(Lyrics)", "[Lyrics]", "(Audio)", "[HD]", "4K", "(Visualizer)", "(Live)", "(Remastered)", "(Official Visualizer)"]; 
+async function getPlaylistName(id){
 
-    items.forEach(element => {
+    const playlistUrl = `https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&id=${id}&key=${API_KEY}`;    
+    const res = await fetch(playlistUrl);
+    const data = await res.json();
+
+    return data.items[0].snippet.title;
+}
+
+
+urlForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const ytUrl = input.value;
+
+    const id = validateYoutubePlaylist(ytUrl);        // validate the URL
+ 
+    const items = await getYoutubePlaylist(id);   
+    const name = await getPlaylistName(id);            
+
+    items.forEach(element => {                               // clean up YT titles 
         let raw = element.snippet.title;
         
-        for (let i = 0; i < filter.length; i++){
-            raw = raw.replaceAll(filter[i], "");
-        }
+        const cleaned = cleanTitle(raw, filter);
 
-        const title = raw.trim();
+        const finalTitle = storeTitle(cleaned);
 
-        let [artist, song] = title.split("-");
-        titles.push({"artist": artist?.trim() || "",        // if it doesnt find an artist, use "" instead
-            "song": song?.trim() || title
-        });
-
+        titles.push(finalTitle);
     });
 
-    console.log(titles);
+    //console.log(titles);
 
-    const spotifyUris = await findSongsOnSpotify(titles);
+    const spotifyUris = await findSongsOnSpotify(titles);           // find songs on spotify
 
-    const spotify_playlist_id = await createPlaylist();
+    const spotify_playlist_id = await createPlaylist(name);             // create playlist on spotify
 
-    addToPlaylist(spotify_playlist_id, spotifyUris);
+    addToPlaylist(spotify_playlist_id, spotifyUris);                // add songs to playlist
 
 });
 
@@ -225,14 +259,14 @@ async function findSongsOnSpotify(songs){
         //console.log(data.tracks.items[0].uri);
     };
 
-    console.log(uris);
+    //console.log(uris);
     return uris;
 }
 
 
 // Create the playlist + Add songs --------------------------------------------------------------------------------------------------
 
-async function createPlaylist(){
+async function createPlaylist(name){
     const token = localStorage.getItem("access_token");
 
     const stuff = {
@@ -242,7 +276,7 @@ async function createPlaylist(){
             "Content-Type": "application/json"    
         },
         body: JSON.stringify({
-            "name": "YoutubeToSpotify Playlist",
+            "name": `${name}`,
             "description": "Created by YoutubeToSpotify",
             "public": false
         })
@@ -252,7 +286,7 @@ async function createPlaylist(){
     const response = await fetch("https://api.spotify.com/v1/me/playlists", stuff);
     const playlist = await response.json();
 
-    console.log(`spotify_playlist_id = ${playlist.id}`);
+    //console.log(`spotify_playlist_id = ${playlist.id}`);
     return playlist.id;
 
 }
@@ -279,9 +313,7 @@ async function addToPlaylist(playlist_id, spotifyUris){
     const response = await fetch(url, options);
     const data = await response.json();
 
-    console.log(data);
-
-
+    //console.log(data);
 }
 
 
