@@ -75,7 +75,7 @@ urlForm.addEventListener("submit", async (e) => {
     const items = data.items;
 
     let titles = [];
-    const filter = ["(Official Video)", "[Official Video]", "(Official Music Video)", "(Lyrics)", "[Lyrics]", "(Audio)", "[HD]", "4K", "(Visualizer)", "(Live)", "(Remastered)"]; 
+    const filter = ["(Official Video)", "[Official Video]", "(Official Music Video)", "(Lyrics)", "[Lyrics]", "(Audio)", "[HD]", "4K", "(Visualizer)", "(Live)", "(Remastered)", "(Official Visualizer)"]; 
 
     items.forEach(element => {
         let raw = element.snippet.title;
@@ -95,9 +95,15 @@ urlForm.addEventListener("submit", async (e) => {
 
     console.log(titles);
 
+    const spotifyUris = await findSongsOnSpotify(titles);
+
+    const spotify_playlist_id = await createPlaylist();
+
+    addToPlaylist(spotify_playlist_id, spotifyUris);
+
 });
 
-// Spotify Oauth ----------------------------------------------------------------------------------------------------------------------------------------
+// Spotify Oauth to get Token ----------------------------------------------------------------------------------------------------------------------------------------
 
 const clientId = "2daccc6066bc41068c6404e16b8600e0";
 const redirectUri = "http://127.0.0.1:5500/main.html";
@@ -194,6 +200,93 @@ async function exchangeCodeForToken(code) {
     // clean URL
     window.history.replaceState({}, document.title, "/main.html");
 }
+
+// Search songs on Spotify and make URI list --------------------------------------------------------------------------------------------------
+
+async function findSongsOnSpotify(songs){
+
+    let uris = [];
+    const token = localStorage.getItem("access_token");
+
+    const options = {
+        headers:{
+            Authorization: `Bearer ${token}`,
+        }
+    };
+
+    for (const {artist, song} of songs){
+        const query = `${artist} ${song}`;
+        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&offset=0`;
+
+        const response = await fetch(url, options);
+        const data = await response.json();
+        
+        uris.push(data.tracks.items[0].uri);             // gets first result
+        //console.log(data.tracks.items[0].uri);
+    };
+
+    console.log(uris);
+    return uris;
+}
+
+
+// Create the playlist + Add songs --------------------------------------------------------------------------------------------------
+
+async function createPlaylist(){
+    const token = localStorage.getItem("access_token");
+
+    const stuff = {
+        method: "POST",
+        headers:{
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"    
+        },
+        body: JSON.stringify({
+            "name": "YoutubeToSpotify Playlist",
+            "description": "Created by YoutubeToSpotify",
+            "public": false
+        })
+
+    };
+
+    const response = await fetch("https://api.spotify.com/v1/me/playlists", stuff);
+    const playlist = await response.json();
+
+    console.log(`spotify_playlist_id = ${playlist.id}`);
+    return playlist.id;
+
+}
+
+async function addToPlaylist(playlist_id, spotifyUris){
+    const token = localStorage.getItem("access_token");
+    const url = `https://api.spotify.com/v1/playlists/${playlist_id}/items`;
+
+    console.log("Playlist ID:", playlist_id);
+    console.log("URIs received:", spotifyUris);
+
+    const options = {
+        method: "POST",
+        headers:{
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"    
+        },
+        body: JSON.stringify({
+            uris: spotifyUris
+
+        })
+    };
+
+    const response = await fetch(url, options);
+    const data = await response.json();
+
+    console.log(data);
+
+
+}
+
+
+
+
 
 
 
